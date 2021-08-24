@@ -1,4 +1,5 @@
 import time
+import itertools
 
 
 def preencheMatrizAdjacencia(matriz, matAdj):
@@ -22,6 +23,19 @@ def escreverArquivoSaida(C, indice):
     for i in range(len(C)):
         string[i+1] = str(C[i][0]) + " "
     string[len(C) + 1] = str(C[0][0])
+
+    for i in string:
+        arquivo.write(i)
+
+    arquivo.close()
+
+def escreverArquivoSaidaForcaBruta(C, cost):
+    arquivo = open("saida.txt", 'w')
+    
+    string = [[] for i in range(len(C) + 1)]
+    string[0] = " " + str(cost) + "\n"
+    for i in range(len(C)):
+        string[i+1] = str(C[i]) + " "
 
     for i in string:
         arquivo.write(i)
@@ -103,6 +117,42 @@ def refinamento_k_opt(G, tempo, opt):
         escreverArquivoSaida(C2, 1)
 
 
+def forcaBruta(G, tempo):
+    inicio = time.time()
+    cost = float("inf")             # Custo do melhor caminho
+    C_best = []                     # Melhor caminho
+    C = [i for i in range(len(G))]  # Lista de caminho auxiliar
+
+    perm_iterator = itertools.permutations(C)   # Realiza as permutações da lista auxiliar
+
+    for C in perm_iterator:                 # Percorre as listas geradas pela permutação
+        C = list(C)                         # Convertendo a tupla em lista
+        C.append(C[0])                      # Adicionando o primeiro elemento para fechar o ciclo
+        custo_atual = 0
+        i = 0
+        while (i + 1) < len(C):
+            custo_atual += G[C[i]][C[i+1]]        # Calcula o custo da permutação atual
+            i += 1
+        if cost > custo_atual:            # Verifica se o caminho atual é menor que o menor caminho encontrado
+            cost = custo_atual
+            C_best = C
+        aux = time.time()
+
+        if (aux - inicio) > tempo:        # Retorna a melhor rota até o tempo máximo estabelecido
+            fim = time.time()
+            print("\nMelhor rota em ate", tempo, "segundos !")
+            print("Custo: ", cost)
+            print("Tempo:", fim - inicio, "s")
+            escreverArquivoSaidaForcaBruta(C_best, cost)
+            return C_best
+
+    fim = time.time()
+    print("Custo: ", cost)
+    print("Tempo:", fim - inicio, "s")
+    escreverArquivoSaidaForcaBruta(C_best, cost)
+
+    return C_best
+
 nomeArquivo = input("\nInforme o grafo: ")
 arquivo = open(nomeArquivo, 'r')
 
@@ -116,12 +166,19 @@ matriz.append(arquivo.readlines())
 matAdj = [[0 for i in range(numVertices)]for i in range(numVertices)]
 matAdj = preencheMatrizAdjacencia(matriz, matAdj)
 
-tempo = int(input("Tempo limite (s): "))
-opt = int(input("Digite o nivel de refinamento: "))
+print("\nAlgoritmos disponíveis:\n\n1- Vizinho Mais Próximo\n2- Força Bruta")
+opcao = int(input("\nDigite o número do algoritmo que você deseja utilizar: "))
 
-custo = [[] for i in range(2)]
-tempoExecucao = [[] for i in range(2)]
-
-refinamento_k_opt(matAdj, tempo, opt)
+if opcao == 1 or opcao == 2:
+    tempo = int(input("\nTempo limite (s): "))
+    custo = [[] for i in range(2)]
+    if opcao == 1:
+        opt = int(input("Digite o nivel de refinamento: "))
+        tempoExecucao = [[] for i in range(2)]
+        refinamento_k_opt(matAdj, tempo, opt)
+    else:
+        forcaBruta(matAdj, tempo)
+else:
+    print("\nOpção inválida ! Programa encerrado !")
 
 arquivo.close()
